@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNTech Analytics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0d12;--bg2:#111318;--bg3:#181b22;--bg4:#1e2129;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);
+  --text:#e4e6f0;--text2:#7c8196;--text3:#454860;
+  --blue:#3b82f6;--blue2:#2563eb;--green:#10b981;--red:#ef4444;--amber:#f59e0b;--purple:#8b5cf6;
+  --r:10px;--rsm:6px;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+
+/* AUTH */
+#auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:radial-gradient(ellipse at 50% -10%,rgba(59,130,246,0.15) 0%,transparent 55%)}
+.acard{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:2.5rem;width:100%;max-width:390px}
+.alogo{display:flex;align-items:center;gap:10px;margin-bottom:2rem}
+.alogo-icon{width:38px;height:38px;background:var(--blue);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.alogo-icon svg{width:19px;height:19px;fill:#fff}
+.abrand{font-size:15px;font-weight:600;color:var(--text);line-height:1.2}
+.abrand span{font-size:12px;color:var(--text2);font-weight:400}
+.ah{font-size:22px;font-weight:700;margin-bottom:5px}
+.asub{font-size:13px;color:var(--text2);margin-bottom:1.75rem}
+.field{margin-bottom:14px}
+.field label{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.04em;text-transform:uppercase;display:block;margin-bottom:5px}
+.field input{width:100%;padding:10px 13px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rsm);color:var(--text);font-size:14px;outline:none;transition:border-color .15s}
+.field input:focus{border-color:var(--blue)}
+.abtn{width:100%;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;transition:background .15s,transform .1s}
+.abtn:hover{background:var(--blue2)}
+.abtn:active{transform:scale(.99)}
+.abtn:disabled{opacity:.5;cursor:not-allowed}
+.aerr{font-size:12px;color:var(--red);min-height:18px;margin-top:10px}
+.anote{text-align:center;font-size:11px;color:var(--text3);margin-top:1.25rem}
+
+/* DASH */
+#dash{display:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:13px 24px;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:100}
+.tb-left{display:flex;align-items:center;gap:11px}
+.tb-brand{font-size:14px;font-weight:600;color:var(--text);line-height:1.2}
+.tb-brand span{font-size:11px;color:var(--text2);font-weight:400}
+.tb-right{display:flex;align-items:center;gap:9px}
+.ptabs{display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:3px;gap:2px}
+.ptab{padding:5px 12px;font-size:12px;border:none;background:transparent;color:var(--text2);border-radius:4px;cursor:pointer;font-weight:500;transition:all .15s}
+.ptab.active{background:var(--bg2);color:var(--text);border:1px solid var(--border2)}
+.sync-btn{display:flex;align-items:center;gap:5px;padding:7px 12px;background:transparent;border:1px solid var(--border2);border-radius:var(--rsm);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
+.sync-btn:hover{color:var(--text);border-color:var(--blue)}
+.sync-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sync-btn.spin svg{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.av{width:31px;height:31px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;cursor:pointer;border:none;position:relative}
+.av-menu{display:none;position:absolute;right:0;top:calc(100% + 7px);background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:5px;min-width:150px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:200}
+.av-menu.open{display:block}
+.av-menu button{display:block;width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:var(--text2);font-size:13px;cursor:pointer;border-radius:6px}
+.av-menu button:hover{background:var(--bg3);color:var(--text)}
+
+.content{padding:22px;max-width:1200px;margin:0 auto}
+.page-title{font-size:18px;font-weight:700;margin-bottom:2px}
+.page-sub{font-size:12px;color:var(--text2);margin-bottom:18px}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:16px}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden;transition:border-color .2s}
+.mc:hover{border-color:var(--border2)}
+.mc-top{position:absolute;top:0;left:0;right:0;height:2px}
+.mc-label{font-size:10px;font-weight:600;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
+.mc-val{font-size:25px;font-weight:700;color:var(--text);letter-spacing:-.02em;line-height:1}
+.mc-sub{font-size:11px;color:var(--text2);margin-top:5px}
+.mc-sub.up{color:var(--green)}
+.mc-sub.dn{color:var(--red)}
+
+.sk{background:linear-gradient(90deg,var(--bg3) 25%,var(--bg4) 50%,var(--bg3) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:4px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+.grid2{display:grid;grid-template-columns:2.2fr 1fr;gap:14px;margin-bottom:14px}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.pt{font-size:13px;font-weight:600;color:var(--text)}
+.ps{font-size:11px;color:var(--text2);margin-top:2px}
+.badge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;flex-shrink:0}
+.badge-g{background:rgba(16,185,129,.14);color:#10b981}
+.badge-a{background:rgba(245,158,11,.14);color:#f59e0b}
+.badge-b{background:rgba(59,130,246,.14);color:#3b82f6}
+
+.chart-wrap{position:relative;height:200px}
+
+.app-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.app-row:last-child{border-bottom:none;padding-bottom:0}
+.app-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.app-info{flex:1;min-width:0}
+.app-name{font-size:13px;font-weight:600;color:var(--text)}
+.app-pkg{font-size:10px;color:var(--text3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-wrap{height:3px;background:var(--bg3);border-radius:2px;margin-top:7px}
+.bar-fill{height:100%;border-radius:2px;transition:width .7s ease}
+.app-nums{text-align:right;flex-shrink:0;margin-left:10px}
+.app-earn{font-size:15px;font-weight:700;color:var(--text)}
+.app-ecpm{font-size:11px;color:var(--text2);margin-top:1px}
+.app-share{font-size:10px;color:var(--text3)}
+
+.ins-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.ins-item:last-child{border-bottom:none;padding-bottom:0}
+.ins-dot{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.ins-badge{font-size:9px;font-weight:700;letter-spacing:.04em;padding:2px 5px;border-radius:3px;display:inline-block;margin-bottom:3px}
+.ib-h{background:rgba(239,68,68,.14);color:#ef4444}
+.ib-m{background:rgba(245,158,11,.14);color:#f59e0b}
+.ib-l{background:rgba(16,185,129,.14);color:#10b981}
+.ins-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px}
+.ins-desc{font-size:11px;color:var(--text2);line-height:1.55}
+
+.err-bar{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:var(--rsm);padding:11px 15px;font-size:12px;color:#fca5a5;margin-bottom:14px;display:none}
+.footer{text-align:center;font-size:11px;color:var(--text3);padding:20px}
+
+@media(max-width:900px){.metrics{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+@media(max-width:500px){.content{padding:14px}.topbar{padding:11px 14px}.metrics{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth">
+  <div class="acard">
+    <div class="alogo">
+      <div class="alogo-icon"><svg viewBox="0 0 24 24"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM17.5 14l4 7h-8z"/></svg></div>
+      <div><div class="abrand">DNTech Analytics <span><br>CAS.AI Revenue Dashboard</span></div></div>
+    </div>
+    <div class="ah">Sign in</div>
+    <div class="asub">Enter your CAS.AI credentials to load your revenue data.</div>
+    <div class="field"><label>Email</label><input id="em" type="email" placeholder="you@example.com" autocomplete="email"></div>
+    <div class="field"><label>Password</label><input id="pw" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="abtn" id="abtn" onclick="doLogin()">Sign in & load data</button>
+    <div class="aerr" id="aerr"></div>
+    <div class="anote">Your credentials are sent directly to CAS.AI — never stored.</div>
+  </div>
+</div>
+
+<!-- DASH -->
+<div id="dash">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="alogo-icon" style="width:32px;height:32px;border-radius:8px"><svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:#fff"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM17.5 14l4 7h-8z"/></svg></div>
+      <div class="tb-brand">DNTech Analytics <span><br>CAS.AI · <span id="tb-period">Last 30 days</span></span></div>
+    </div>
+    <div class="tb-right">
+      <div class="ptabs">
+        <button class="ptab" data-d="7">7d</button>
+        <button class="ptab active" data-d="30">30d</button>
+        <button class="ptab" data-d="90">90d</button>
+      </div>
+      <button class="sync-btn" id="syncbtn" onclick="syncData()">
+        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Sync
+      </button>
+      <div style="position:relative">
+        <button class="av" id="avbtn" onclick="toggleMenu()">DA</button>
+        <div class="av-menu" id="avmenu">
+          <button onclick="doLogout()">Sign out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="err-bar" id="errbar"></div>
+    <div class="page-title">Revenue Overview</div>
+    <div class="page-sub" id="pagesub">Loading...</div>
+
+    <div class="metrics" id="metrics">
+      <div class="mc"><div class="mc-top" style="background:var(--blue)"></div><div class="mc-label">Est. Revenue</div><div class="sk" style="height:30px;width:90px;margin:8px 0 6px"></div><div class="sk" style="height:11px;width:60px"></div></div>
+      <div class="mc"><div class="mc-top" style="background:var(--green)"></div><div class="mc-label">Impressions</div><div class="sk" style="height:30px;width:90px;margin:8px 0 6px"></div><div class="sk" style="height:11px;width:60px"></div></div>
+      <div class="mc"><div class="mc-top" style="background:var(--purple)"></div><div class="mc-label">eCPM avg</div><div class="sk" style="height:30px;width:90px;margin:8px 0 6px"></div><div class="sk" style="height:11px;width:60px"></div></div>
+      <div class="mc"><div class="mc-top" style="background:var(--amber)"></div><div class="mc-label">Active Apps</div><div class="sk" style="height:30px;width:90px;margin:8px 0 6px"></div><div class="sk" style="height:11px;width:60px"></div></div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <div class="ph">
+          <div><div class="pt">Revenue trend</div><div class="ps" id="chart-sub">Daily eCPM & earnings</div></div>
+          <span class="badge badge-b" id="chart-badge">–</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chart" role="img" aria-label="Daily revenue trend"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><div><div class="pt">Focus areas</div><div class="ps">What to work on next</div></div></div>
+        <div id="insights"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph">
+        <div><div class="pt">App breakdown</div><div class="ps">Revenue per app</div></div>
+        <span class="badge badge-a" id="appbadge">– apps</span>
+      </div>
+      <div id="applist"><div style="text-align:center;padding:2rem;color:var(--text2)">Loading...</div></div>
+    </div>
+  </div>
+  <div class="footer">DNTech Analytics · Data from CAS.AI · Personal use only</div>
+</div>
+
+<script>
+const CAS = 'https://b2b.cas.ai/api';
+let TOKEN = null, PERIOD = 30, chartInst = null;
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const em = document.getElementById('em').value.trim();
+  const pw = document.getElementById('pw').value;
+  const errEl = document.getElementById('aerr');
+  const btn = document.getElementById('abtn');
+  errEl.textContent = '';
+  if (!em || !pw) return errEl.textContent = 'Email and password required.';
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  try {
+    const form = new URLSearchParams();
+    form.append('email', em); form.append('password', pw);
+    const res = await fetch(`${CAS}/login`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/x-www-form-urlencoded'},
+      body: form
+    });
+    const data = await res.json();
+    if (!data.access_token) throw new Error(data.message || data.error || 'Login failed — check your credentials.');
+    TOKEN = data.access_token;
+    sessionStorage.setItem('cas_token', TOKEN);
+    document.getElementById('auth').style.display = 'none';
+    document.getElementById('dash').style.display = 'block';
+    syncData();
+  } catch(e) {
+    errEl.textContent = e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign in & load data';
+  }
+}
+document.getElementById('pw').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogout() {
+  TOKEN = null; sessionStorage.removeItem('cas_token');
+  document.getElementById('dash').style.display = 'none';
+  document.getElementById('auth').style.display = 'flex';
+}
+function toggleMenu() { document.getElementById('avmenu').classList.toggle('open'); }
+document.addEventListener('click', e => { if(!document.getElementById('avbtn').contains(e.target)) document.getElementById('avmenu').classList.remove('open'); });
+
+// Restore session
+(function(){ const t = sessionStorage.getItem('cas_token'); if(t){ TOKEN=t; document.getElementById('auth').style.display='none'; document.getElementById('dash').style.display='block'; syncData(); } })();
+
+// ── Period selector ───────────────────────────────────────────────────────────
+document.querySelectorAll('.ptab').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.ptab').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  PERIOD = parseInt(b.dataset.d);
+  document.getElementById('tb-period').textContent = `Last ${PERIOD} days`;
+  syncData();
+}));
+
+// ── Dates ─────────────────────────────────────────────────────────────────────
+function daysAgo(n) { const d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().split('T')[0]; }
+function today() { return new Date().toISOString().split('T')[0]; }
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function casGet(path) {
+  const r = await fetch(`${CAS}${path}`, {headers:{'Authorization':`Bearer ${TOKEN}`}});
+  if (r.status===401) { doLogout(); throw new Error('Session expired'); }
+  if (!r.ok) throw new Error(`API error ${r.status} on ${path}`);
+  return r.json();
+}
+async function casPost(path, body) {
+  const r = await fetch(`${CAS}${path}`, {
+    method:'POST', headers:{'Authorization':`Bearer ${TOKEN}`,'Content-Type':'application/json'}, body:JSON.stringify(body)
+  });
+  if (r.status===401) { doLogout(); throw new Error('Session expired'); }
+  if (!r.ok) throw new Error(`API error ${r.status} on ${path}`);
+  return r.json();
+}
+
+// ── Sync ──────────────────────────────────────────────────────────────────────
+async function syncData() {
+  if (!TOKEN) return;
+  const btn = document.getElementById('syncbtn');
+  btn.classList.add('spin');
+  document.getElementById('errbar').style.display = 'none';
+
+  try {
+    const dateFilter = { type:'date', value:{ beginDate: daysAgo(PERIOD), endDate: today() } };
+
+    const [appList, totalsData, appData, chartData] = await Promise.all([
+      casGet('/mediation/apps'),
+      casPost('/mediation/data', {
+        filter:[dateFilter], calcTotal:true, currency:'usd',
+        columns:[{id:'impressions'},{id:'observed_ecpm'},{id:'est_earnings'}]
+      }),
+      casPost('/mediation/data', {
+        filter:[dateFilter], calcTotal:true, currency:'usd',
+        columns:[{id:'app'},{id:'impressions'},{id:'observed_ecpm'},{id:'est_earnings'}]
+      }),
+      casPost('/mediation/data', {
+        filter:[dateFilter], calcTotal:false, currency:'usd',
+        columns:[{id:'date'},{id:'impressions'},{id:'observed_ecpm'},{id:'est_earnings'}]
+      })
+    ]);
+
+    // Build app ID map
+    const appMap = {};
+    (appList||[]).forEach(a => { appMap[a.App_ID] = a; });
+
+    const totals = totalsData.totals || {};
+    const stats = {
+      revenue: parseFloat(totals.est_earnings)||0,
+      impressions: parseInt(totals.impressions)||0,
+      ecpm: parseFloat(totals.observed_ecpm)||0,
+    };
+
+    const apps = (appData.list||[]).map(row => ({
+      name: (appMap[row.app]||{}).Name || `App ${row.app}`,
+      pkg:  (appMap[row.app]||{}).Bundle_ID || '',
+      id:   row.app,
+      impressions: parseInt(row.impressions)||0,
+      ecpm: parseFloat(row.observed_ecpm)||0,
+      earnings: parseFloat(row.est_earnings)||0
+    })).sort((a,b) => b.earnings - a.earnings);
+
+    const series = (chartData.list||[]).map(r => ({
+      date: r.date||'', impressions: parseInt(r.impressions)||0,
+      ecpm: parseFloat(r.observed_ecpm)||0, revenue: parseFloat(r.est_earnings)||0
+    })).sort((a,b) => a.date.localeCompare(b.date));
+
+    renderMetrics(stats, apps.length);
+    renderApps(apps);
+    renderInsights(stats, apps);
+    renderChart(series);
+    document.getElementById('pagesub').textContent = `${apps.length} app${apps.length!==1?'s':''} · Last ${PERIOD} days · synced ${new Date().toLocaleTimeString()}`;
+
+  } catch(e) {
+    if (e.message !== 'Session expired') {
+      document.getElementById('errbar').textContent = '⚠ ' + e.message;
+      document.getElementById('errbar').style.display = 'block';
+    }
+  } finally { btn.classList.remove('spin'); }
+}
+
+// ── Renderers ─────────────────────────────────────────────────────────────────
+function fmt$(v){ return '$'+(+v||0).toFixed(2); }
+function fmtN(v){ return (+v||0).toLocaleString(); }
+
+function renderMetrics(s, appCount) {
+  document.getElementById('metrics').innerHTML = `
+    <div class="mc"><div class="mc-top" style="background:var(--blue)"></div><div class="mc-label">Est. Revenue</div><div class="mc-val">${fmt$(s.revenue)}</div><div class="mc-sub">${PERIOD}-day total</div></div>
+    <div class="mc"><div class="mc-top" style="background:var(--green)"></div><div class="mc-label">Impressions</div><div class="mc-val">${fmtN(s.impressions)}</div><div class="mc-sub">Total ad views</div></div>
+    <div class="mc"><div class="mc-top" style="background:var(--purple)"></div><div class="mc-label">eCPM avg</div><div class="mc-val">${fmt$(s.ecpm)}</div><div class="mc-sub">Blended rate</div></div>
+    <div class="mc"><div class="mc-top" style="background:var(--amber)"></div><div class="mc-label">Active Apps</div><div class="mc-val">${appCount}</div><div class="mc-sub">On CAS.AI</div></div>`;
+}
+
+const COLORS = ['#3b82f6','#10b981','#8b5cf6','#f59e0b','#ef4444','#06b6d4'];
+const ICONS  = ['🎬','📚','🎮','📱','⚡','🌟'];
+
+function renderApps(apps) {
+  document.getElementById('appbadge').textContent = apps.length + ' app' + (apps.length!==1?'s':'');
+  if (!apps.length) { document.getElementById('applist').innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2)">No app data.</div>'; return; }
+  const total = apps.reduce((s,a)=>s+(+a.earnings||0),0);
+  document.getElementById('applist').innerHTML = apps.map((a,i)=>{
+    const share = total>0?((a.earnings/total)*100).toFixed(0):0;
+    const c = COLORS[i%COLORS.length], ic = ICONS[i%ICONS.length];
+    return `<div class="app-row">
+      <div class="app-icon" style="background:${c}22">${ic}</div>
+      <div class="app-info">
+        <div class="app-name">${a.name}</div>
+        <div class="app-pkg">${a.pkg}</div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${share}%;background:${c}"></div></div>
+      </div>
+      <div class="app-nums">
+        <div class="app-earn">${fmt$(a.earnings)}</div>
+        <div class="app-ecpm">eCPM ${fmt$(a.ecpm)} · ${fmtN(a.impressions)} impr.</div>
+        <div class="app-share">${share}% of total</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderInsights(stats, apps) {
+  const ins = [];
+  const top = apps[0], bot = apps[apps.length-1];
+  const total = apps.reduce((s,a)=>s+(+a.earnings||0),0);
+
+  if (top && total>0) {
+    const pct = ((top.earnings/total)*100).toFixed(0);
+    ins.push({l:'h',ic:'🎬',t:`Scale ${top.name} — it's ${pct}% of revenue`,d:`eCPM of ${fmt$(top.ecpm)} is your best performer. Adding rewarded video or boosting ad frequency could grow earnings 20–30%.`});
+  }
+  if (bot && apps.length>1 && bot.ecpm < top.ecpm*0.6) {
+    ins.push({l:'h',ic:'⚠️',t:`${bot.name} eCPM underperforming`,d:`At ${fmt$(bot.ecpm)} vs ${fmt$(top.ecpm)} for ${top.name} — a ${(((top.ecpm-bot.ecpm)/top.ecpm)*100).toFixed(0)}% gap. Try switching ad formats or testing different network waterfall order.`});
+  }
+  if (apps.length < 3) {
+    ins.push({l:'m',ic:'💡',t:'Add a 3rd app to reduce concentration risk',d:`${apps.length<2?'One app is':'Two apps are'} risky. A utility or productivity app would diversify revenue and protect against policy changes.`});
+  }
+  ins.push({l:'m',ic:'📈',t:'Experiment with rewarded video',d:'Rewarded ads typically yield 3–5× higher eCPM than banners. If not implemented yet, this is the highest ROI ad format to add next.'});
+  ins.push({l:'l',ic:'🔁',t:'Check mediation waterfall order',d:'Reordering your ad network waterfall can improve fill rate and push eCPM up by 10–20% with zero code changes.'});
+
+  const bc={h:'ib-h',m:'ib-m',l:'ib-l'}, bt={h:'HIGH',m:'MEDIUM',l:'LOW'};
+  document.getElementById('insights').innerHTML = ins.slice(0,5).map(i=>`
+    <div class="ins-item">
+      <div class="ins-dot" style="background:var(--bg3)">${i.ic}</div>
+      <div><div><span class="ins-badge ${bc[i.l]}">${bt[i.l]}</span></div><div class="ins-title">${i.t}</div><div class="ins-desc">${i.d}</div></div>
+    </div>`).join('');
+}
+
+function renderChart(series) {
+  if (!series.length) return;
+  const labels = series.map(d=>{ const dt=new Date(d.date); return isNaN(dt)?d.date:dt.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit'}); });
+  const ecpmV = series.map(d=>+(+d.ecpm).toFixed(3));
+  const revV  = series.map(d=>+(+d.revenue).toFixed(3));
+  const peak  = Math.max(...ecpmV);
+  const avg   = (ecpmV.reduce((a,b)=>a+b,0)/ecpmV.length).toFixed(2);
+  document.getElementById('chart-badge').textContent = 'Peak $'+peak.toFixed(2);
+  document.getElementById('chart-sub').textContent   = `Daily eCPM · avg $${avg}`;
+  if (chartInst) chartInst.destroy();
+  chartInst = new Chart(document.getElementById('chart'),{
+    type:'line',
+    data:{labels, datasets:[
+      {label:'eCPM ($)',data:ecpmV,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.07)',borderWidth:1.5,pointRadius:0,tension:.4,fill:true,yAxisID:'y'},
+      {label:'Revenue ($)',data:revV,borderColor:'#10b981',backgroundColor:'transparent',borderWidth:1,borderDash:[4,3],pointRadius:0,tension:.4,fill:false,yAxisID:'y2'}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#181b22',borderColor:'rgba(255,255,255,.08)',borderWidth:1,titleColor:'#7c8196',bodyColor:'#e4e6f0',
+          callbacks:{label:c=>c.dataset.label+': $'+c.parsed.y.toFixed(2)}}
+      },
+      scales:{
+        x:{ticks:{color:'#454860',font:{size:10},maxTicksLimit:10},grid:{display:false},border:{display:false}},
+        y:{ticks:{color:'#454860',font:{size:10},callback:v=>'$'+v.toFixed(2)},grid:{color:'rgba(255,255,255,0.03)'},border:{display:false}},
+        y2:{position:'right',ticks:{color:'#10b981',font:{size:10},callback:v=>'$'+v.toFixed(2)},grid:{display:false},border:{display:false}}
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
